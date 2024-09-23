@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import UploadOptions from './UploadOptions';
+import ProgressBar from './ProgressBar';
+import RecipeDisplay from './RecipeDisplay';
+import PreviewImage from './PreviewImage';
 
 const ImageUpload = () => {
     const [file, setFile] = useState(null);
@@ -10,6 +12,7 @@ const ImageUpload = () => {
     const [textEntries, setTextEntries] = useState(['']);
     const [uploadType, setUploadType] = useState('image');
     const [recipes, setRecipes] = useState('');
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     const onFileChange = (e) => {
         const file = e.target.files[0];
@@ -53,6 +56,10 @@ const ImageUpload = () => {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
+                onUploadProgress: (progressEvent) => {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setUploadProgress(percentCompleted);
+                },
             });
             console.log('Upload successful:', res.data);
             setRecipes(res.data.recipes);
@@ -60,9 +67,21 @@ const ImageUpload = () => {
             setFile(null);
             setTextEntries(['']);
             setPreview(null);
+            setUploadProgress(0); // 重置进度条
         } catch (error) {
-            console.error('Upload failed:', error.response ? error.response.data : error.message);
-            setStatus('Upload failed');
+            if (error.response) {
+                const errorCode = error.response.status;
+                if (errorCode === 400) {
+                    setStatus('Bad Request: Please check your input.');
+                } else if (errorCode === 500) {
+                    setStatus('Server Error: Please try again later.');
+                } else {
+                    setStatus(`Error: ${error.response.data.message}`);
+                }
+            } else {
+                setStatus('Network Error: Please check your connection.');
+            }
+            setUploadProgress(0); // 重置进度条
         }
     };
 
@@ -83,74 +102,24 @@ const ImageUpload = () => {
 
     return (
         <div style={styles.container}>
-            {recipes && (
-                <div style={styles.recipesContainer}>
-                    <h2>Recommended Recipes:</h2>
-                    <div style={styles.markdownContainer}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{recipes}</ReactMarkdown>
-                    </div>
-                </div>
-            )}
-            <h1 style={styles.heading}>Upload</h1>
-            <div style={styles.radioContainer}>
-                <label>
-                    <input
-                        type="radio"
-                        value="image"
-                        checked={uploadType === 'image'}
-                        onChange={() => setUploadType('image')}
-                    />
-                    Image
-                </label>
-                <label>
-                    <input
-                        type="radio"
-                        value="text"
-                        checked={uploadType === 'text'}
-                        onChange={() => setUploadType('text')}
-                    />
-                    Text
-                </label>
+            <div style={styles.leftPanel}>
+                <UploadOptions
+                    uploadType={uploadType}
+                    setUploadType={setUploadType}
+                    onFileChange={onFileChange}
+                    onFileUpload={onFileUpload}
+                    textEntries={textEntries}
+                    handleTextChange={handleTextChange}
+                    addTextEntry={addTextEntry}
+                    removeTextEntry={removeTextEntry}
+                />
+                <PreviewImage preview={preview} />
+                <ProgressBar uploadProgress={uploadProgress} />
+                {status && <p style={styles.status}>{status}</p>}
             </div>
-            {uploadType === 'image' && (
-                <div style={styles.inputContainer}>
-                    <input type="file" onChange={onFileChange} style={styles.input} />
-                    <button onClick={onFileUpload} style={styles.button}>Upload Image</button>
-                </div>
-            )}
-            {uploadType === 'text' && (
-                <div>
-                    <table style={styles.table}>
-                        <thead>
-                            <tr>
-                                <th>Text Entry</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {textEntries.map((text, index) => (
-                                <tr key={index}>
-                                    <td>
-                                        <input
-                                            type="text"
-                                            value={text}
-                                            onChange={(e) => handleTextChange(index, e.target.value)}
-                                            style={styles.textInput}
-                                        />
-                                    </td>
-                                    <td>
-                                        <button onClick={() => removeTextEntry(index)} style={styles.removeButton}>Remove</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <button onClick={addTextEntry} style={styles.addButton}>Add Text Entry</button>
-                    <button onClick={onFileUpload} style={styles.button}>Upload Text</button>
-                </div>
-            )}
-            {preview && <img src={preview} alt="preview" style={styles.previewImage} />}
-            {status && <p style={styles.status}>{status}</p>}
+            <div style={styles.rightPanel}>
+                <RecipeDisplay recipes={recipes} />
+            </div>
         </div>
     );
 };
@@ -158,87 +127,24 @@ const ImageUpload = () => {
 const styles = {
     container: {
         display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: 'row',
         height: '100vh',
-        textAlign: 'center',
-        backgroundColor: 'black', // 设置黑色背景
-        color: 'white', // 设置白色字体
+        background: 'linear-gradient(to bottom, #f5f7fa, #c3cfe2)',
+        color: '#333',
         padding: '20px',
     },
-    heading: {
-        fontSize: '24px',
-        marginBottom: '20px',
+    leftPanel: {
+        flex: 1,
+        padding: '20px',
     },
-    radioContainer: {
-        marginBottom: '20px',
-    },
-    inputContainer: {
-        display: 'flex',
-        alignItems: 'center',
-        marginBottom: '20px',
-    },
-    input: {
-        marginRight: '10px',
-    },
-    button: {
-        padding: '10px 20px',
-        backgroundColor: '#4CAF50',
-        color: 'white',
-        border: 'none',
-        borderRadius: '5px',
-        cursor: 'pointer',
-    },
-    table: {
-        marginBottom: '20px',
-        borderCollapse: 'collapse',
-    },
-    textInput: {
-        width: '200px',
-        padding: '5px',
-    },
-    removeButton: {
-        backgroundColor: '#f44336',
-        color: 'white',
-        border: 'none',
-        borderRadius: '5px',
-        cursor: 'pointer',
-        padding: '5px 10px',
-    },
-    addButton: {
-        marginBottom: '10px',
-        padding: '10px 20px',
-        backgroundColor: '#2196F3',
-        color: 'white',
-        border: 'none',
-        borderRadius: '5px',
-        cursor: 'pointer',
-    },
-    previewImage: {
-        maxWidth: '400px',
-        maxHeight: '400px',
-        objectFit: 'contain',
-        marginTop: '20px',
+    rightPanel: {
+        flex: 1,
+        padding: '20px',
+        overflowY: 'auto',
     },
     status: {
         marginTop: '20px',
         fontSize: '18px',
-    },
-    recipesContainer: {
-        marginBottom: '20px',
-        padding: '10px',
-        border: '1px solid #ccc',
-        borderRadius: '5px',
-        backgroundColor: '#333', // 黑色背景
-        color: 'white', // 白色字体
-        width: '80%', // 根据页面大小变化
-        maxHeight: '60vh', // 设置最大高度
-        overflowY: 'auto', // 启用垂直滚动
-    },
-    markdownContainer: {
-        padding: '10px',
-        whiteSpace: 'pre-wrap', // 处理换行
     },
 };
 
