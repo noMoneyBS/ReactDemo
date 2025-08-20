@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import api from "../api/axios";
+import { getText } from "../locales/translations";
 
-function Uploader({ setRecipes }) {
+function Uploader({ setRecipes, user, language }) {
   const [inputType, setInputType] = useState("text");
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
@@ -9,8 +10,28 @@ function Uploader({ setRecipes }) {
   const handleUpload = async () => {
     try {
       if (inputType === "text") {
-        const res = await api.post("/chat", { message: text });
-        setRecipes((prev) => [...prev, res.data.reply]); // 自动追加推荐
+        // 使用登录用户的ID
+        const userId = user?.userId || user?.id || "testUser123";
+        const res = await api.post("/chat", { 
+          message: text,
+          userId: userId,
+          language: language
+        });
+        
+        // 解析返回的JSON字符串
+        let parsedRecipes = [];
+        try {
+          console.log("🔧 前端收到的原始数据:", res.data);
+          parsedRecipes = JSON.parse(res.data.recipes);
+          console.log("🔧 解析后的食谱数据:", parsedRecipes);
+        } catch (parseError) {
+          console.error("解析食谱数据失败:", parseError);
+          console.error("原始数据:", res.data.recipes);
+          alert(getText(language, "parseError"));
+          return;
+        }
+        
+        setRecipes(parsedRecipes); // 替换为新的食谱推荐
         setText(""); // 清空输入框
       } else {
         const formData = new FormData();
@@ -26,13 +47,13 @@ function Uploader({ setRecipes }) {
       }
     } catch (err) {
       console.error(err);
-      alert("上传失败，请检查控制台日志。");
+      alert(getText(language, "uploadFailed"));
     }
   };
 
   return (
     <section className="bg-white rounded-2xl p-6 shadow-md">
-      <h2 className="text-lg font-semibold mb-4">上传食材</h2>
+      <h2 className="text-lg font-semibold mb-4">{getText(language, "uploadIngredients")}</h2>
 
       <div className="flex space-x-4 mb-4">
         <button
@@ -41,7 +62,7 @@ function Uploader({ setRecipes }) {
           }`}
           onClick={() => setInputType("text")}
         >
-          输入文字
+          {getText(language, "inputText")}
         </button>
         <button
           className={`px-3 py-1 rounded ${
@@ -49,13 +70,13 @@ function Uploader({ setRecipes }) {
           }`}
           onClick={() => setInputType("image")}
         >
-          上传图片
+          {getText(language, "uploadImage")}
         </button>
       </div>
 
       {inputType === "text" ? (
         <textarea
-          placeholder="请输入食材，如：鸡胸肉、西红柿..."
+          placeholder={getText(language, "ingredientsPlaceholder")}
           className="w-full border rounded p-2 mb-4"
           rows={3}
           value={text}
@@ -74,7 +95,7 @@ function Uploader({ setRecipes }) {
         onClick={handleUpload}
         className="px-4 py-2 rounded bg-green-500 text-white hover:bg-green-600"
       >
-        提交
+        {getText(language, "submit")}
       </button>
     </section>
   );

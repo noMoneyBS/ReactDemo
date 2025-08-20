@@ -1,12 +1,13 @@
 import React from "react";
+import { getText } from "../locales/translations";
 
-function Recommendation({ recipes, setRecipes }) {
+function Recommendation({ recipes, setRecipes, language }) {
   return (
     <section className="bg-black text-white rounded-2xl p-6 shadow-lg">
-      <h2 className="text-lg font-semibold mb-4">今日推荐食谱</h2>
+      <h2 className="text-lg font-semibold mb-4">{getText(language, "todayRecommendations")}</h2>
 
       {recipes.length === 0 ? (
-        <p className="text-gray-400">还没有推荐，请在下方上传食材获取。</p>
+        <p className="text-gray-400">{getText(language, "noRecommendations")}</p>
       ) : (
         <ul className="space-y-2">
           {recipes.map((item, idx) => (
