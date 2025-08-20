@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getText } from "../locales/translations";
 import api from "../api/axios";
 import NutritionAnalysisService from "../services/nutritionAnalysis";
+import RecipeRating from "./RecipeRating";
 
 function RecipeDisplay({ recipes, language, user }) {
   const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
@@ -311,6 +312,20 @@ function RecipeDisplay({ recipes, language, user }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* 评分系统 */}
+        {user && (
+          <div className="mt-6">
+            <RecipeRating
+              recipe={currentRecipe}
+              user={user}
+              language={language}
+              onRatingChange={(ratingData) => {
+                console.log("评分已更新:", ratingData);
+              }}
+            />
           </div>
         )}
       </div>
