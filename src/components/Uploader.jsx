@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../api/axios";
 import { getText } from "../locales/translations";
 
@@ -6,6 +6,25 @@ function Uploader({ setRecipes, user, language }) {
   const [inputType, setInputType] = useState("text");
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
+  const [imageRecognitionAvailable, setImageRecognitionAvailable] = useState(false);
+  const [loadingAvailability, setLoadingAvailability] = useState(true);
+
+  // 检查图片识别功能是否可用
+  useEffect(() => {
+    const checkImageRecognition = async () => {
+      try {
+        const response = await api.get("/image/availability");
+        setImageRecognitionAvailable(response.data.available);
+      } catch (error) {
+        console.log("图片识别功能不可用:", error.message);
+        setImageRecognitionAvailable(false);
+      } finally {
+        setLoadingAvailability(false);
+      }
+    };
+
+    checkImageRecognition();
+  }, []);
 
   const handleUpload = async () => {
     try {
@@ -34,15 +53,46 @@ function Uploader({ setRecipes, user, language }) {
         setRecipes(parsedRecipes); // 替换为新的食谱推荐
         setText(""); // 清空输入框
       } else {
+        // 图片识别功能
         const formData = new FormData();
         formData.append("image", file);
-        const res = await api.post("/preference/upload", formData, {
+        formData.append("language", language);
+        
+        // 先识别图片中的食材
+        const recognitionRes = await api.post("/image/recognize", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        // 假设上传后也返回推荐内容
-        if (res.data.reply) {
-          setRecipes((prev) => [...prev, res.data.reply]);
+        
+        if (recognitionRes.data.success) {
+          const recognizedIngredients = recognitionRes.data.ingredients;
+          const ingredientsText = recognizedIngredients.map(ing => ing.name).join("、");
+          
+          // 显示识别结果
+          alert(`${getText(language, "imageRecognitionSuccess")}${ingredientsText}`);
+          
+          // 使用识别到的食材生成食谱推荐
+          const userId = user?.userId || user?.id || "testUser123";
+          const res = await api.post("/chat", { 
+            message: ingredientsText,
+            userId: userId,
+            language: language
+          });
+          
+          // 解析返回的JSON字符串
+          let parsedRecipes = [];
+          try {
+            parsedRecipes = JSON.parse(res.data.recipes);
+          } catch (parseError) {
+            console.error("解析食谱数据失败:", parseError);
+            alert(getText(language, "parseError"));
+            return;
+          }
+          
+          setRecipes(parsedRecipes);
+        } else {
+          alert(getText(language, "imageRecognitionFailed"));
         }
+        
         setFile(null); // 清空选择的文件
       }
     } catch (err) {
@@ -64,14 +114,25 @@ function Uploader({ setRecipes, user, language }) {
         >
           {getText(language, "inputText")}
         </button>
-        <button
-          className={`px-3 py-1 rounded ${
-            inputType === "image" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setInputType("image")}
-        >
-          {getText(language, "uploadImage")}
-        </button>
+        
+        {loadingAvailability ? (
+          <button className="px-3 py-1 rounded bg-gray-300 text-gray-500" disabled>
+            {getText(language, "checkingAvailability")}
+          </button>
+        ) : imageRecognitionAvailable ? (
+          <button
+            className={`px-3 py-1 rounded ${
+              inputType === "image" ? "bg-blue-500 text-white" : "bg-gray-200"
+            }`}
+            onClick={() => setInputType("image")}
+          >
+            {getText(language, "uploadImage")}
+          </button>
+        ) : (
+          <button className="px-3 py-1 rounded bg-gray-300 text-gray-500" disabled title={getText(language, "imageRecognitionUnavailable")}>
+            📷 {getText(language, "uploadImage")} ({getText(language, "imageRecognitionUnavailable")})
+          </button>
+        )}
       </div>
 
       {inputType === "text" ? (

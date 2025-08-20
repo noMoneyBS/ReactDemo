@@ -1,10 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getText } from "../locales/translations";
 import api from "../api/axios";
+import NutritionAnalysisService from "../services/nutritionAnalysis";
 
 function RecipeDisplay({ recipes, language, user }) {
   const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
   const [isSelecting, setIsSelecting] = useState(false);
+  const [nutritionAnalysis, setNutritionAnalysis] = useState(null);
+
+  // 当食谱变化时，重新分析营养
+  useEffect(() => {
+    if (recipes && recipes.length > 0) {
+      const currentRecipe = recipes[currentRecipeIndex];
+      const analysis = NutritionAnalysisService.analyzeRecipe(currentRecipe);
+      setNutritionAnalysis(analysis);
+    }
+  }, [recipes, currentRecipeIndex]);
 
   if (!recipes || recipes.length === 0) {
     return (
@@ -200,14 +211,89 @@ function RecipeDisplay({ recipes, language, user }) {
             <span className="text-purple-600">📊</span>
             {getText(language, "nutrition")}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {Object.entries(currentRecipe.nutrition || currentRecipe.nutrients || {}).map(([key, value]) => (
-              <div key={key} className="bg-white rounded-lg p-3 text-center">
-                <div className="text-sm text-gray-600 capitalize">{key}</div>
-                <div className="font-semibold text-purple-600">{value}</div>
+          
+          {/* 营养评分 */}
+          {nutritionAnalysis && (
+            <div className="mb-4 p-3 bg-white rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">
+                  {getText(language, "nutritionScore")}
+                </span>
+                <div className="flex items-center space-x-2">
+                  <div className="flex space-x-1">
+                    {[...Array(10)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={`w-2 h-2 rounded-full ${
+                          i < nutritionAnalysis.score ? 'bg-green-500' : 'bg-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm font-bold text-green-600">
+                    {nutritionAnalysis.score}/10
+                  </span>
+                </div>
               </div>
-            ))}
+              
+              {/* 饮食标签 */}
+              {nutritionAnalysis.dietaryTags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {nutritionAnalysis.dietaryTags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                    >
+                      {NutritionAnalysisService.getDietaryTagText(tag, language)}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* 详细营养信息 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {nutritionAnalysis ? (
+              Object.entries(nutritionAnalysis.nutrition).map(([key, nutrient]) => (
+                <div key={key} className="bg-white rounded-lg p-3 text-center">
+                  <div className="text-sm text-gray-600 capitalize">
+                    {getText(language, key) || key}
+                  </div>
+                  <div className={`font-semibold ${NutritionAnalysisService.getLevelColor(nutrient.level)}`}>
+                    {nutrient.value} {nutrient.unit}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {NutritionAnalysisService.getLevelText(nutrient.level, language)}
+                  </div>
+                </div>
+              ))
+            ) : (
+              Object.entries(currentRecipe.nutrition || currentRecipe.nutrients || {}).map(([key, value]) => (
+                <div key={key} className="bg-white rounded-lg p-3 text-center">
+                  <div className="text-sm text-gray-600 capitalize">{key}</div>
+                  <div className="font-semibold text-purple-600">{value}</div>
+                </div>
+              ))
+            )}
           </div>
+          
+          {/* 健康建议 */}
+          {nutritionAnalysis && nutritionAnalysis.healthAdvice.length > 0 && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <h3 className="text-sm font-semibold text-blue-800 mb-2">
+                💡 {getText(language, "healthAdvice")}
+              </h3>
+              <ul className="space-y-1">
+                {nutritionAnalysis.healthAdvice.map((advice, index) => (
+                  <li key={index} className="text-sm text-blue-700 flex items-start">
+                    <span className="mr-2">•</span>
+                    {advice}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* 烹饪小贴士 */}

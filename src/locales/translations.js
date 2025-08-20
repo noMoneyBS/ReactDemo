@@ -56,6 +56,39 @@ export const translations = {
     selecting: "记录中...",
     preferenceRecorded: "已记录您的偏好！",
     preferenceFailed: "记录偏好失败，请重试",
+    
+    // 图片识别
+    imageRecognitionSuccess: "识别到的食材：",
+    imageRecognitionFailed: "图片识别失败，请重试",
+    uploadImage: "上传图片",
+    imageUploadHint: "上传冰箱或餐桌照片，自动识别食材",
+    checkingAvailability: "检查中...",
+    imageRecognitionUnavailable: "图片识别功能暂不可用",
+    
+    // 交互式对话
+    interactiveChat: "智能对话推荐",
+    chatDescription: "像聊天一样，逐步了解您的偏好",
+    chatWelcome: "您好！我是您的智能食谱助手",
+    chatHint: "请告诉我您有什么食材，我会逐步引导您选择",
+    chatInputPlaceholder: "输入您的食材或选择偏好...",
+    thinking: "思考中...",
+    send: "发送",
+    chatError: "对话出错，请重试",
+    
+    // 模式选择
+    traditionalMode: "传统模式",
+    interactiveMode: "对话模式",
+    uploaderDescription: "直接输入食材，快速获得推荐",
+    interactiveDescription: "通过对话逐步了解您的偏好，获得更精准的推荐",
+    
+    // 营养分析
+    nutritionScore: "营养评分",
+    healthAdvice: "健康建议",
+    calories: "热量",
+    protein: "蛋白质",
+    fat: "脂肪",
+    carbs: "碳水化合物",
+    fiber: "膳食纤维",
   },
   
   en: {
@@ -114,6 +147,39 @@ export const translations = {
     selecting: "Recording...",
     preferenceRecorded: "Your preference has been recorded!",
     preferenceFailed: "Failed to record preference, please try again",
+    
+    // Image recognition
+    imageRecognitionSuccess: "Recognized ingredients: ",
+    imageRecognitionFailed: "Image recognition failed, please try again",
+    uploadImage: "Upload Image",
+    imageUploadHint: "Upload fridge or table photo to auto-recognize ingredients",
+    checkingAvailability: "Checking...",
+    imageRecognitionUnavailable: "Image recognition unavailable",
+    
+    // Interactive chat
+    interactiveChat: "Smart Chat Recommendation",
+    chatDescription: "Like chatting, gradually understand your preferences",
+    chatWelcome: "Hello! I'm your smart recipe assistant",
+    chatHint: "Tell me what ingredients you have, I'll guide you step by step",
+    chatInputPlaceholder: "Enter your ingredients or select preferences...",
+    thinking: "Thinking...",
+    send: "Send",
+    chatError: "Chat error, please try again",
+    
+    // Mode selection
+    traditionalMode: "Traditional Mode",
+    interactiveMode: "Interactive Mode",
+    uploaderDescription: "Directly input ingredients for quick recommendations",
+    interactiveDescription: "Through conversation to understand your preferences for more accurate recommendations",
+    
+    // Nutrition analysis
+    nutritionScore: "Nutrition Score",
+    healthAdvice: "Health Advice",
+    calories: "Calories",
+    protein: "Protein",
+    fat: "Fat",
+    carbs: "Carbohydrates",
+    fiber: "Fiber",
   },
   
   ja: {
