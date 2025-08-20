@@ -124,14 +124,108 @@ const ImageUpload = () => {
     );
 };
 
+const ChatWindow = () => {
+    const [messages, setMessages] = useState([]);
+    const [input, setInput] = useState('');
+    const [user, setUser] = useState(null); // 用户信息
+
+    const sendMessage = async () => {
+        if (!input.trim()) return;
+
+        const newMessage = { role: 'user', content: input };
+        setMessages([...messages, newMessage]);
+
+        try {
+            const res = await axios.post('http://localhost:5001/chat', {
+                userId: user?.id, // 传递用户 ID
+                message: input,
+            });
+
+            const botMessages = res.data.options.map((option, index) => ({
+                role: 'bot',
+                content: `Option ${index + 1}: ${option}`,
+            }));
+
+            setMessages([...messages, newMessage, ...botMessages]);
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+
+        setInput('');
+    };
+
+    return (
+        <div style={styles.container}>
+            <div style={styles.chatBox}>
+                {messages.map((msg, index) => (
+                    <div
+                        key={index}
+                        style={{
+                            ...styles.message,
+                            alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                            backgroundColor: msg.role === 'user' ? '#4CAF50' : '#f1f1f1',
+                        }}
+                    >
+                        {msg.content}
+                    </div>
+                ))}
+            </div>
+            <div style={styles.inputBox}>
+                <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    style={styles.input}
+                    placeholder="Ask for a recipe..."
+                />
+                <button onClick={sendMessage} style={styles.button}>
+                    Send
+                </button>
+            </div>
+        </div>
+    );
+};
+
 const styles = {
     container: {
         display: 'flex',
-        flexDirection: 'row',
+        flexDirection: 'column',
         height: '100vh',
-        background: 'linear-gradient(to bottom, #f5f7fa, #c3cfe2)',
-        color: '#333',
         padding: '20px',
+        background: 'linear-gradient(to bottom, #f5f7fa, #c3cfe2)',
+    },
+    chatBox: {
+        flex: 1,
+        overflowY: 'auto',
+        padding: '10px',
+        border: '1px solid #ccc',
+        borderRadius: '5px',
+        backgroundColor: '#fff',
+    },
+    message: {
+        margin: '10px',
+        padding: '10px',
+        borderRadius: '5px',
+        maxWidth: '60%',
+    },
+    inputBox: {
+        display: 'flex',
+        marginTop: '10px',
+    },
+    input: {
+        flex: 1,
+        padding: '10px',
+        border: '1px solid #ccc',
+        borderRadius: '5px',
+    },
+    button: {
+        marginLeft: '10px',
+        padding: '10px 20px',
+        backgroundColor: '#4CAF50',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
     },
     leftPanel: {
         flex: 1,
@@ -149,3 +243,4 @@ const styles = {
 };
 
 export default ImageUpload;
+export { ChatWindow };
